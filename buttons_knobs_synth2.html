@@ -1,0 +1,157 @@
+<html>
+<head>
+  <title>buttons and sliders and synth</title>
+  <script src="zepto.js"></script>
+  <script src="interface.js"></script>
+  <script src="gibberish_2.0.min.js"></script>
+  
+  <style>
+    #panel {
+      top:0;
+      left:0;
+      width:100%;
+      height:50%;
+      position:absolute;
+      display:block;
+    }
+    #codez {
+      background-color:#ddd;
+      position:absolute;
+      display:block;
+      top:50%;
+      width:100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id='panel'></div>
+  <pre id='codez'>
+    Gibberish.init();
+    synth  = new Gibberish.Synth().connect();
+    
+    panel = new Interface.Panel({ container:document.getElementById('panel') });
+    
+    button1 = new Interface.Button({
+      mode : 'contact',
+      max:440,
+      label:'440',
+      target:synth, key:'note',
+      bounds:[0,0,.5,.25],
+    })
+    
+    button2 = new Interface.Button({
+      mode : 'contact',
+      max:880,
+      label:'880',
+      target:synth, key:'note',
+      bounds:[.5,0,.5,.25],
+    })
+    
+    button3 = new Interface.Button({
+      mode : 'contact',
+      max:1320,
+      label:'1320',
+      target:synth, key:'note',
+      bounds:[0,.25,.5,.25],
+    })
+    
+    button4 = new Interface.Button({
+      mode : 'contact',
+      max:507,
+      label:'507',
+      target:synth, key:'note',
+      bounds:[.5,.25,.5,.25],
+    })
+    
+    sliderAttack = new Interface.Slider({
+      bounds:[0, .5, .5, .25],
+      label: 'attack',
+      isVertical:false,
+      min: 20, max: 44100,
+      target: synth, key:'attack'
+    })
+    
+    sliderDecay = new Interface.Slider({
+      bounds:[.5, .5, .5, .25],
+      label: 'decay',      
+      isVertical:false,
+      min: 20, max: 44100,
+      target: synth, key:'decay'
+    })
+    
+    sliderAmp = new Interface.Slider({
+      bounds:[0, .75, .5, .25],
+      label: 'amp',      
+      isVertical:false,
+      min: 0, max: 1,
+      target: synth, key:'amp'
+    })
+    
+    panel.add(button1,button2,button3,button4, sliderAttack, sliderDecay, sliderAmp);
+  </pre>
+  <script>
+    Gibberish.init();
+    synth2  = new Gibberish.Synth2({attack:10, decay:88200}).connect();
+    
+    panel = new Interface.Panel({ container:document.getElementById('panel') });
+    
+    button1 = new Interface.Button({
+      mode : 'contact',
+      max:440,
+      label:'440',
+      target:synth2, key:'note',
+      bounds:[0,0,.5,.25],
+    })
+    
+    button2 = new Interface.Button({
+      mode : 'contact',
+      max:880,
+      label:'880',
+      target:synth2, key:'note',
+      bounds:[.5,0,.5,.25],
+    })
+    
+    button3 = new Interface.Button({
+      mode : 'contact',
+      max:1320,
+      label:'1320',
+      target:synth2, key:'note',
+      bounds:[0,.25,.5,.25],
+    })
+    
+    button4 = new Interface.Button({
+      mode : 'contact',
+      max:507,
+      label:'507',
+      target:synth2, key:'note',
+      bounds:[.5,.25,.5,.25],
+    })
+    
+    knobCutoff = new Interface.Knob({
+      bounds:[0, .5, .2,.2],
+      radius:.075,
+      min: 0, max: .7,
+      target:synth2, key:'cutoff',
+    })
+    
+    knobResonance = new Interface.Knob({
+      bounds:[.2, .5, .2,.2],
+      radius:.075,
+      min: 0, max: 6,
+      target:synth2, key:'resonance',
+    })
+    
+    sliderAmp = new Interface.Slider({
+      bounds:[.5, .5, .5, .25],
+      label: 'amp',      
+      isVertical:false,
+      min: 0, max: 1.5,
+      target: synth2, key:'amp'
+    })
+    
+    panel.add(button1,button2,button3,button4, knobCutoff, knobResonance, sliderAmp);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,73 @@
+<html>
+<head>
+  <title>instrument test</title>
+  <script src="zepto.js"></script>
+  <script src="interface.js"></script>
+  <script src="gibberish_2.0.min.js"></script>
+  
+  <style>
+    #panel {
+      top:0;
+      left:0;
+      width:100%;
+      height:50%;
+      position:absolute;
+      display:block;
+    }
+    #codez {
+      background-color:#ddd;
+      position:absolute;
+      display:block;
+      top:50%;
+      width:100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id='panel'></div>
+  <pre id='codez'>
+    Gibberish.init();
+    sine  = new Gibberish.Sine().connect();
+    
+    panel = new Interface.Panel();
+    
+    sliderFrequency = new Interface.Slider({
+      target:sine, key:'frequency',
+      label:'freq',
+      min:150, max:1000,
+      bounds:[0,0,.3,1],
+    });
+    
+    sliderAmp = new Interface.Slider({
+      target:sine, key:'amp',
+      label:'amp',
+      bounds:[.3,0,.3,1],
+    });
+    
+    panel.add(sliderFrequency, sliderAmp);
+  </pre>
+  <script>
+  Gibberish.init();
+  sine  = new Gibberish.Sine().connect();
+    
+  var panel = new Interface.Panel({ container:document.getElementById('panel') });
+    
+  sliderFrequency = new Interface.Slider({
+    target:sine, key:'frequency',
+    label:'freq',
+    min:150, max:1000,
+    bounds:[0,0,.3,1],
+  });
+    
+  sliderAmp = new Interface.Slider({
+    target:sine, key:'amp',
+    label:'amp',
+    bounds:[.3,0,.3,1],
+  });
+    
+  panel.add(sliderFrequency, sliderAmp);
+  </script>
+</body>
+
+</html>

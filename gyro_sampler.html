@@ -1,0 +1,102 @@
+<html>
+<head>
+  <title>instrument test</title>
+  <script src="zepto.js"></script>
+  <script src="interface.js"></script>
+  <script src="gibberish_2.0.min.js"></script>
+  
+  <style>
+    #panel {
+      top:0;
+      left:0;
+      width:100%;
+      height:50%;
+      position:absolute;
+      display:block;
+    }
+    #codez {
+      background-color:#ddd;
+      position:absolute;
+      display:block;
+      top:50%;
+      width:100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id='panel'></div>
+  
+  <pre id='codez'>
+    Gibberish.init()
+  
+    sampler = new Gibberish.Sampler({
+      file: "resources/snare.wav",
+      playOnLoad:0,
+    })
+    
+    flanger = new Gibberish.Flanger({ input:sampler }).connect()
+      
+    panel = new Interface.Panel()
+  
+    o = new Interface.Orientation({
+      onvaluechange : function(pitch, roll, yaw) {
+        sampler.pitch = (-4 + pitch * 8) + 1;
+        flanger.feedback = roll * .95;
+      }
+    }).start()
+  
+    trigger = new Interface.Button({
+      bounds:[0,0,.8,1],
+      mode:'contact',
+      label:'play',
+      ontouchmousedown : function() { sampler.note( o.pitch ); },
+    })
+    
+    flangerSpeedSlider = new Interface.Slider({
+      bounds:[.8,0,.2,1],
+      label:'flanger speed',
+      min:.1, max:8,
+      target:flanger, key:'rate',
+    })
+  
+    panel.add( trigger, flangerSpeedSlider );
+
+  </pre>
+  <script>
+    Gibberish.init()
+  
+    sampler = new Gibberish.Sampler({
+      file: "resources/snare.wav",
+      playOnLoad:0,
+    })
+    
+    flanger = new Gibberish.Flanger({ input:sampler }).connect();
+      
+    panel = new Interface.Panel({ container:document.getElementById('panel') })
+  
+    o = new Interface.Orientation({
+      onvaluechange : function(pitch, roll, yaw) {
+        sampler.pitch = (-4 + pitch * 8) + 1;
+        flanger.feedback = roll * .95;
+      }
+    }).start()
+  
+    trigger = new Interface.Button({
+      bounds:[0,0,.8,1],
+      mode:'contact',
+      label:'play',
+      ontouchmousedown : function() { sampler.note( o.pitch ); },
+    })
+    
+    flangerSpeedSlider = new Interface.Slider({
+      bounds:[.8,0,.2,1],
+      label:'flanger speed',
+      min:.1, max:8,
+      target:flanger, key:'rate',
+    })
+  
+    panel.add( trigger, flangerSpeedSlider );
+  </script>
+</body>
+</html>

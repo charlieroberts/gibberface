@@ -1,0 +1,37 @@
+<html>
+<head>
+  <title>instrument test</title>
+  <script src="zepto.js"></script>
+  <script src="interface.js"></script>
+  <script src="gibberish_2.0.min.js"></script>
+</head>
+
+<body>
+  <script>
+    Gibberish.init();
+    
+    pulse  = new Gibberish.PWM().connect();
+    
+    o = new Interface.Orientation({
+      onvaluechange : function(pitch, roll, yaw) {
+        pulse.frequency = 200 + pitch * 800;
+      }
+    })
+
+    o.start();
+  </script>
+</body>
+<pre>
+  Gibberish.init();
+    
+  pulse  = new Gibberish.PWM().connect();
+    
+  o = new Interface.Orientation({
+    onvaluechange : function(pitch, roll, yaw) {
+      pulse.frequency = 200 + pitch * 800;
+    }
+  })
+
+  o.start();
+</pre>
+</html>

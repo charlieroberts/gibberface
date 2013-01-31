@@ -1,0 +1,139 @@
+<html>
+<head>
+  <title>buttons and sliders and synth</title>
+  <script src="zepto.js"></script>
+  <script src="interface.js"></script>
+  <script src="gibberish_2.0.min.js"></script>
+  
+  <style>
+    #panel {
+      top:0;
+      left:0;
+      width:100%;
+      height:50%;
+      position:absolute;
+      display:block;
+    }
+    #codez {
+      background-color:#ddd;
+      position:absolute;
+      display:block;
+      top:50%;
+      width:100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id='panel'></div>
+  <pre id='codez'>
+    Gibberish.init();
+    
+    sampler = new Gibberish.Sampler({
+      file: "../Gibberish/resources/trumpet.wav",
+      loops:true,
+      playOnLoad:1,
+    });
+    
+    filter  = new Gibberish.Filter24({ input : sampler })
+    delay   = new Gibberish.Delay({ input : filter }).connect();
+          
+    panel = new Interface.Panel({ container:document.getElementById('panel') });
+    
+    samplerRange = new Interface.Range({ 
+      bounds : [0,0,1,.2],
+      onvaluechange : function() { 
+        sampler.start = this.leftValue * sampler.length;
+        sampler.end = this.rightValue * sampler.length;
+      },
+    });
+      
+    samplerPitch = new Interface.Crossfader({
+      target:sampler, key:'pitch',
+      bounds : [0,.25,1,.1],
+      isVertical : false,
+      min:-2, max:2,
+    });
+    
+    filterCutoff = new Interface.Slider({
+      target:filter, key:'cutoff',
+      label:'cutoff',
+      bounds : [0,.35,1,.1],
+      isVertical : false,
+      min:0, max:.8,
+    });
+      
+    filterResonance = new Interface.Slider({
+      target:filter, key:'resonance',
+      label:'resonance',
+      bounds : [0,.45,1,.1],
+      isVertical : false,
+      min:0, max:6,
+    });
+      
+    feedback = new Interface.Slider({
+      target: delay, key:'feedback',
+      label:'delay feedback',     
+      bounds : [0,.55,1,.1],
+      isVertical : false,
+    });
+    
+    panel.add(samplerRange, samplerPitch, filterCutoff, filterResonance, feedback);
+  </pre>
+  <script>
+    Gibberish.init();
+    
+    sampler = new Gibberish.Sampler({
+      file: "resources/trumpet.wav",
+      loops:true,
+      playOnLoad:1,
+    });
+    
+    filter  = new Gibberish.Filter24({ input : sampler })
+    delay   = new Gibberish.Delay({ input : filter }).connect();
+          
+    panel = new Interface.Panel({ container:document.getElementById('panel') });
+    
+    samplerRange = new Interface.Range({ 
+      bounds : [0,0,1,.3],
+      onvaluechange : function() { 
+        sampler.start = this.leftValue * sampler.length;
+        sampler.end = this.rightValue * sampler.length;
+      },
+    });
+      
+    samplerPitch = new Interface.Crossfader({
+      target:sampler, key:'pitch',
+      bounds : [0,.35,1,.2],
+      isVertical : false,
+      min:-2, max:2,
+    });
+    
+    filterCutoff = new Interface.Slider({
+      target:filter, key:'cutoff',
+      label:'cutoff',
+      bounds : [0,.55,1,.15],
+      isVertical : false,
+      min:0, max:.8,
+    });
+      
+    filterResonance = new Interface.Slider({
+      target:filter, key:'resonance',
+      label:'resonance',
+      bounds : [0,.7,1,.15],
+      isVertical : false,
+      min:0, max:6,
+    });
+      
+    feedback = new Interface.Slider({
+      target: delay, key:'feedback',
+      label:'delay feedback',     
+      bounds : [0,.85,1,.15],
+      isVertical : false,
+    });
+    
+    panel.add(samplerRange, samplerPitch, filterCutoff, filterResonance, feedback);
+  </script>
+</body>
+
+</html>
