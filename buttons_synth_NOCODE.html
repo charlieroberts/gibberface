@@ -1,0 +1,53 @@
+<html>
+<head>
+  <title>buttons and synth</title>
+  <script src="zepto.js"></script>
+  <script src="interface.js"></script>
+  <script src="gibberish_2.0.min.js"></script>
+</head>
+
+<body>
+  <script>
+    Gibberish.init();
+    synth  = new Gibberish.Synth().connect();
+    
+    panel = new Interface.Panel();
+    
+    button1 = new Interface.Button({
+      mode : 'contact',
+      max:440,
+      label:'440',
+      target:synth, key:'note',
+      bounds:[0,0,.5,.5],
+    })
+    
+    button2 = new Interface.Button({
+      mode : 'contact',
+      max:880,
+      label:'880',
+      target:synth, key:'note',
+      bounds:[.5,0,.5,.5],
+    })
+    
+    button3 = new Interface.Button({
+      mode : 'contact',
+      max:1320,
+      label:'1320',
+      target:synth, key:'note',
+      bounds:[0,.5,.5,.5],
+    })
+    
+    button4 = new Interface.Button({
+      mode : 'contact',
+      max:507,
+      label:'507',
+      target:synth, key:'note',
+      bounds:[.5,.5,.5,.5],
+    })
+    
+    panel.add(button1,button2,button3,button4);
+  
+  </script>
+</body>
+
+</html>
