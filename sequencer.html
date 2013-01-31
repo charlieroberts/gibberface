@@ -1,0 +1,155 @@
+<html>
+<head>
+  <title>buttons and synth</title>
+  <script src="zepto.js"></script>
+  <script src="interface.js"></script>
+  <script src="gibberish_2.0.min.js"></script>
+</head>
+
+<body>
+  <script>
+  Sequencer = {
+    tempo : 200,
+    count : 0,
+
+    setButtonNumbers : function() {
+    	for(i = 0; i < grid.rows; i++) {
+    		for(j = 0; j < grid.columns; j++) {
+    			var btn = grid.children[(i * grid.columns) + j];
+    			btn.midiNumber = Sequencer.notes[Sequencer.notes.length - (i+1)];
+    		}
+    	}
+    },
+
+    setSliderNumbers : function(ms, num) {
+    	for(var i = 0; i < ms.children.length; i++) {
+    		var slider = ms.children[i];
+    		slider.midiNumber = num;
+    	}
+    },
+    
+    run :  function () {
+      if(arguments[0] === 0) { this.stop(); return; }
+	
+    	var lastNum = (Sequencer.count == 0) ? 15 : Sequencer.count - 1;
+    
+    	for(var i = 0; i < grid.rows; i++) {
+        var num = Sequencer.count + (i * grid.columns);
+    		var btn = grid.children[num];
+        if(btn) {
+          switch(i) {
+            case 0: if(btn._value) kick.note(1); break;
+            case 1: if(btn._value) snare.note(1); break;
+            case 2: if(btn._value) hat.note(1); break;
+            case 3: if(btn._value) openHat.note(1); break;                              
+          }
+        }
+    	}
+      beatMarker.setValue( (1/16) * Sequencer.count);
+        
+    	if(Sequencer.count++ === 15) Sequencer.count = 0;
+
+    	Sequencer.timeout = setTimeout(Sequencer.run, Sequencer.tempo);
+    },
+
+    stop : function() {
+    	clearTimeout(Sequencer.timeout);
+    },
+
+    setTempo : function(newTempo) {
+    	console.log("SETTING TEMPO" + newTempo);
+    	Sequencer.tempo = 250 / (newTempo / 60);
+    },
+  }
+  
+  panel = new Interface.Panel();
+  panel.setBackgroundColor('black');
+  panel.background = 'black';
+  panel.fill = "#040";
+  panel.stroke="#090";
+  
+  grid = new Interface.MultiButton({
+    rows:4, columns:16,
+    requiresFocus: false,
+    bounds:[0,.25,1,.35],
+  })
+  
+  startButton = new Interface.Button({
+    bounds:[0,.025,.2,.1],
+    target:Sequencer, key:'run',
+    label:'start/stop',
+  })
+  
+  beatMarker = new Interface.Crossfader({
+    bounds:[0,.15,1,.1],
+    colors:["black", "#933", "#090"],
+    crossfaderWidth:2,
+    min:0, max:1,
+    _value:0,
+  })
+
+  panel.add( beatMarker, grid, startButton  );
+
+  Gibberish.init();
+  
+  drums = new Gibberish.Bus2();
+  
+  kick = new Gibberish.Sampler({ file: 'resources/kick.wav' }).connect( drums );
+  snare = new Gibberish.Sampler({ file: 'resources/snare.wav' }).connect( drums );
+  hat = new Gibberish.Sampler({ file: 'resources/hat.wav' }).connect( drums );
+  openHat = new Gibberish.Sampler({ file: 'resources/openhat.wav' }).connect( drums );
+  
+  decimator = new Gibberish.Decimator({ input:drums });
+  
+  sampleRate = new Interface.Slider({
+    isVertical:false,
+    bounds:[0,.65,.49,.1],
+    min:.01, max:1,
+    target:decimator, key:'sampleRate',
+    label:'sample rate',
+  })
+  
+  bitDepth = new Interface.Slider({
+    isVertical:false,
+    bounds:[.5,.65,.49,.1],
+    min:.01, max:16,
+    target:decimator, key:'bitDepth',
+    label:'bit depth',
+  })
+  
+  decimatorLabel = new Interface.Label({
+    bounds:[.015, .625, .1, .1],
+    fill:"green",
+    value:'DECIMATOR',
+    hAlign:'left',
+  });
+  
+  ring = new Gibberish.RingModulation({ input:decimator }).connect();
+  
+  ringFrequency = new Interface.Slider({
+    isVertical:false,
+    bounds:[0,.8,.49,.1],
+    min:150, max:1500,
+    target:ring, key:'frequency',
+    label:'frequency',
+  })
+  
+  ringAmount = new Interface.Slider({
+    isVertical:false,
+    bounds:[.5,.8,.49,.1],
+    target:ring, key:'amp',
+    label:'amp',
+  })
+  
+  ringLabel = new Interface.Label({
+    bounds:[.015, .775, .1, .1],
+    fill:"green",
+    value:'RING MODULATION',
+    hAlign:'left',
+  });
+  
+  panel.add( sampleRate, bitDepth, decimatorLabel, ringFrequency, ringAmount, ringLabel );
+  </script>
+</body>
+
+</html>
