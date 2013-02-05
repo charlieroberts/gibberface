@@ -136,6 +136,7 @@ Interface.Panel = function() {
     shouldDraw :  [],
     fps : 60,
     useRelativeSizesAndPositions : true,
+    labelSize: '12px',
     
     container: (function() {
       if(typeof _container === 'undefined') {
@@ -494,6 +495,8 @@ Interface.Widget = {
     }
     
     this.focusedTouches = [];
+    
+    if(this.value) this.setValue(this.value, true);
   },
   
   refresh : function() {
@@ -588,6 +591,15 @@ Interface.Widget = {
   _y : function() { return this.panel.useRelativeSizesAndPositions ? this.y * this.panel.height : this.y; },
   _width  : function() { return this.panel.useRelativeSizesAndPositions ? this.width * this.panel.width : this.width; },
   _height : function() { return this.panel.useRelativeSizesAndPositions ? this.height * this.panel.height : this.height; },
+  
+  _labelSize : function() { 
+    var size = this.labelSize || this.panel.labelSize;
+    if(this.panel.useRelativeSizesAndPositions) {
+      console.log("AIREIRHER");
+      size = Math.floor(size * this.panel.width) + 'px';
+    }
+    return size;
+  },
 };
 
 /**#Interface.Slider - Widget
@@ -905,7 +917,7 @@ Interface.Knob = function() {
   Interface.extend(this, {
     _value: 0,
     radius: 30,
-    knobBuffer:15,
+    knobBuffer:0,
     lastPosition: 0,
     
     draw : function() {
@@ -913,7 +925,7 @@ Interface.Knob = function() {
           y = this._y(),
           width = this._width(),
           height= this._height();
-      //this.canvasCtx.clearRect(0, 0, this.width,this.height);
+      this.ctx.clearRect(x, y, this.radius * 2,this.radius * 2.5);
       this.ctx.strokeStyle = this._stroke();
       //this.ctx.lineWidth = 1.5;
 	
@@ -978,6 +990,14 @@ Interface.Knob = function() {
       this.ctx.closePath();
       
       this.ctx.stroke();
+      
+      if(this.label !== null) {
+        this.ctx.fillStyle = this._stroke();
+        this.ctx.textBaseline = 'middle';
+        this.ctx.textAlign = 'center';
+        this.ctx.font = this._labelSize();// || this.panel.labelSize;
+        this.ctx.fillText(this.label, x + this.radius, y + this.radius * 2.25);
+      }
     },
     
     changeValue : function( xOffset, yOffset ) {
@@ -1614,7 +1634,7 @@ Interface.MultiSlider = function() {
   Interface.extend(this, {
     isVertical : true,
     children: [],
-    
+    values: [],
     _init     : function() {
       var sliderWidth = this.width / this.count;
       
@@ -1641,7 +1661,7 @@ Interface.MultiSlider = function() {
         this.panel.add( slider );
       }
     },
-  onvaluechange : function(id, value) { /*console.log("MS", id, value);*/ },
+  onvaluechange : function(id, value) {},
   })
   .init( arguments[0] );
 };
@@ -1745,6 +1765,8 @@ Interface.Orientation = function() {
       if( !isNaN(orientation.webkitCompassHeading) ) {
         _self.heading = _self.min + ((orientation.webkitCompassHeading  /  360 ) * _self.max );
       }
+      
+      _self.sendTargetMessage();
       
       if(typeof _self.onvaluechange !== 'undefined') {
         _self.onvaluechange(_self.pitch, _self.roll, _self.yaw, _self.heading);
