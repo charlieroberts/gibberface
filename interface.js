@@ -34,14 +34,62 @@ var Interface = {
     return destination;
   },
   
-  mouseDown : false,
-  useTouch : 'ontouchstart' in document.documentElement,
   isAndroid : (function() {
     var ua = navigator.userAgent.toLowerCase();
     return ua.indexOf("android") > -1;
   })(),
+  
+  panels : [],
+  mouseDown : false,
+  useTouch : 'ontouchstart' in document.documentElement,
 };
 
+Interface.Presets = {
+  dictionary : typeof localStorage.interfacejs === 'undefined' ? {} : JSON.parse( localStorage.interfacejs ),
+  
+  save : function(name) {
+    var preset = [];
+    for(var h = 0; h < Interface.panels.length; h++) {
+      var panel = Interface.panels[h];
+      preset[h] = [];
+      for(var i = 0; i < panel.children.length; i++) {
+        var widget = panel.children[i];
+        if(typeof widget.children === 'object') {
+          var children = [];
+          for(var j = 0; j < widget.children.length; j++) {
+            children[j] = widget.children[j].value;
+          }
+          preset[h][i] = children;
+        }else{
+          preset[h][i] = widget.value;
+        }
+      }
+      this.dictionary[ name ] = preset;
+      localStorage.interfacejs = JSON.stringify( this.dictionary );
+    }
+  },
+  
+  load : function(name) {
+    var preset = this.dictionary[ name ];
+    for(var h = 0; h < Interface.panels.length; h++) {
+      var panel = Interface.panels[h]; 
+      for(var i = 0; i < panel.children.length; i++) {
+        var widget = panel.children[i];
+        if(typeof widget.children === 'object') {
+          for(var j = 0; j < widget.children.length; j++) {
+             widget.children[j].setValue( preset[h][i][j] );
+          }
+        }else{
+          widget.setValue( preset[h][i] );
+        }
+      }
+    }
+  },
+  
+  list : function() {
+    return Object.keys( this.dictionary );
+  },
+};
 /**#Interface.Panel - Widget
 A panel is a container for on-screen widgets. There can be multiple panels in a HTML page. Panels are the starting point for event processing in Interface.js.
 **/
@@ -134,7 +182,7 @@ Interface.Panel = function() {
   Interface.extend(this, {
     children:     [],
     shouldDraw :  [],
-    fps : 60,
+    fps : 30,
     useRelativeSizesAndPositions : true,
     labelSize: '12px',
     
@@ -310,6 +358,7 @@ Interface.Panel = function() {
       },
     }
   });
+  Interface.panels.push( this );
 };
 
 var widgetDefaults = {
@@ -587,18 +636,15 @@ Interface.Widget = {
   _stroke : function() { return this.stroke || this.panel.stroke; },
   _fill : function() { return this.fill || this.panel.fill; },
   
-  _x : function() { return this.panel.useRelativeSizesAndPositions ? this.x * this.panel.width : this.x; },
-  _y : function() { return this.panel.useRelativeSizesAndPositions ? this.y * this.panel.height : this.y; },
-  _width  : function() { return this.panel.useRelativeSizesAndPositions ? this.width * this.panel.width : this.width; },
-  _height : function() { return this.panel.useRelativeSizesAndPositions ? this.height * this.panel.height : this.height; },
+  _x : function() { return this.panel.useRelativeSizesAndPositions ? Math.floor(this.x * this.panel.width) + .5 : this.x; },
+  _y : function() { return this.panel.useRelativeSizesAndPositions ? Math.floor(this.y * this.panel.height) + .5 : this.y; },
+  _width  : function() { return this.panel.useRelativeSizesAndPositions ? Math.floor(this.width * this.panel.width) + .5 : this.width; },
+  _height : function() { return this.panel.useRelativeSizesAndPositions ? Math.floor(this.height * this.panel.height) + .5 : this.height; },
   
-  _labelSize : function() { 
-    var size = this.labelSize || this.panel.labelSize;
-    if(this.panel.useRelativeSizesAndPositions) {
-      console.log("AIREIRHER");
-      size = Math.floor(size * this.panel.width) + 'px';
-    }
-    return size;
+  _font : function() { 
+    var font = this.font || this.panel.font;
+
+    return font;
   },
 };
 
@@ -643,6 +689,7 @@ Interface.Slider = function() {
         this.ctx.fillStyle = this._stroke();
         this.ctx.textBaseline = 'middle';
         this.ctx.textAlign = 'center';
+        this.ctx.font = this._font();
         this.ctx.fillText(this.label, x + width / 2, y + height / 2);
       }
       
@@ -800,6 +847,7 @@ Interface.Button = function() {
         this.ctx.fillStyle = this._stroke();
         this.ctx.textBaseline = 'middle';
         this.ctx.textAlign = 'center';
+        this.ctx.font = this._font();
         this.ctx.fillText(this.label, x + width / 2, y + height / 2);
       }
       
@@ -821,7 +869,22 @@ Interface.Button = function() {
         }
       }     
     },
-    
+    setValue : function(value, doNotDraw) {
+      var r = this.max - this.min,
+          v = value;
+        
+      this.value = value;
+                
+      if(this.min !== 0 || this.max !== 1) {
+        v -= this.min;
+        this._value = v / r;
+      }else{
+        this._value = this.value;
+      }
+      this.lastValue = this.value;
+      if(!doNotDraw && this.mode !== 'contact') this.refresh();
+    },
+
     mousedown : function(e, hit) {
       if(hit && Interface.mouseDown) {
         this.isMouseOver = true;
@@ -995,7 +1058,7 @@ Interface.Knob = function() {
         this.ctx.fillStyle = this._stroke();
         this.ctx.textBaseline = 'middle';
         this.ctx.textAlign = 'center';
-        this.ctx.font = this._labelSize();// || this.panel.labelSize;
+        this.ctx.font = this._font();
         this.ctx.fillText(this.label, x + this.radius, y + this.radius * 2.25);
       }
     },
@@ -1580,7 +1643,6 @@ Interface.Menu.prototype = Interface.Widget;
 Interface.Label = function() {
   Interface.extend(this, {
     size:12,
-    font:'helvetica',
     weight:'normal',
     hAlign:'center',
     vAlign:'middle',
@@ -1590,6 +1652,7 @@ Interface.Label = function() {
       this.ctx.textAlign = this.hAlign;
       this.ctx.textBaseline = this.vAlign;
       this.ctx.fillStyle = this._fill();
+      this.ctx.font = this._font();
       this.ctx.fillText(this.value, this._x(), this._y());
     },
   })
@@ -1703,6 +1766,7 @@ Interface.MultiButton = function() {
         }
       }
     },
+    draw : function() { for(var i = 0; i < this.children.length; i++) this.children[i].draw(); },
     onvaluechange : function(row, column, value) {},
   })
   .init( arguments[0] );

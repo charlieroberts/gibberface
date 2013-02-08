@@ -8,7 +8,7 @@
 </head>
 
 <body>
-  <script>
+  <script>  
   Sequencer = {
     tempo : 100,
     count : 0,
@@ -74,7 +74,7 @@
   panel.background = 'black';
   panel.fill = "#040";
   panel.stroke="#090";
-  panel.labelSize = .005;
+  panel.font = '9px helvetica';
   whratio = panel.width / panel.height;
   
   grid = new Interface.MultiButton({
@@ -82,6 +82,52 @@
     requiresFocus: false,
     bounds:[0,.25,.75, .35],
   })
+  
+  lastChanged = 0;
+  presets = new Interface.MultiButton({
+    rows:2, columns:4,
+    requiresFocus: false,
+    bounds:[.775, .1, .2, .1],
+    onvaluechange : function(r,c,v) { 
+      var changed = r * this.columns + c;
+      this.children[lastChanged].setValue(0);
+      lastChanged = changed;
+    }
+  });
+  panel.add(presets);
+  for(var i = 0; i < presets.rows * presets.columns; i++) { console.log(i); presets.children[i].label = i + 1 }
+  presets.draw();
+  presets.children[0].setValue(1);  
+  
+  presetsLabel = new Interface.Label({
+    bounds:[.775, .025, .1, .05],
+    fill: '#0a0',
+    value:'PRESETS',
+    hAlign:'left',
+  });
+  load = new Interface.Button({
+    mode:'contact',
+    label:'load',
+    ontouchmousedown: function() { Interface.Presets.load( "" + lastChanged ); },
+    bounds:[.775, .05, .05, .05],
+  });
+  save = new Interface.Button({
+    mode:'contact',
+    label:'save',
+    ontouchmousedown : function() { Interface.Presets.save( "" + lastChanged ); },
+    bounds:[.825, .05, .05, .05],
+  });
+  copy = new Interface.Button({
+    mode:'contact',    
+    label:'copy',
+    bounds:[.875 , .05, .05, .05],
+  });
+  paste = new Interface.Button({
+    mode:'contact',    
+    label:'paste',
+    bounds:[.925, .05, .05, .05],
+  });
+  panel.add(load, save, copy, paste, presetsLabel);
   
   multi = new Interface.MultiSlider({
     requiresFocus: false,
@@ -156,20 +202,20 @@
   sampleRate = new Interface.Knob({
     isVertical:false,
     bounds:[.005,.65],
-    radius:.025,
+    radius:.05,
     min:.01, max:1,
     value:1,
     target:decimator, key:'sampleRate',
-    label:'sample rate',
+    label:'rate',
   })
   
   bitDepth = new Interface.Knob({
     isVertical:false,
-    bounds:[.06,.65], radius:.025,
+    bounds:[.11,.65], radius:.05,
     min:.01, max:16,
     target:decimator, key:'bitDepth',
     value:16,
-    label:'bit depth',
+    label:'depth',
   })
   
   decimatorLabel = new Interface.Label({
@@ -179,7 +225,7 @@
     hAlign:'left',
   });
   
-  ring = new Gibberish.RingModulation({ input:decimator });
+  /*ring = new Gibberish.RingModulation({ input:decimator });
   ringMod = new Gibberish.Sine(.5,30);
   
   ring.mod('frequency', ringMod, '+');
@@ -209,7 +255,7 @@
     min:.1, max:20,
     value:5,
     target:ringMod, key:'frequency',
-    label:'mod frequency',
+    label:'mod freq',
   })
   
   ringModDepth = new Interface.Knob({
@@ -226,9 +272,9 @@
     fill:"green",
     value:'RING MODULATION',
     hAlign:'left',
-  });
+  });*/
   
-  filter = new Gibberish.Filter24({input:ring, cutoff:.2, resonance:4}).connect();
+  filter = new Gibberish.Filter24({input:decimator, cutoff:.2, resonance:4}).connect();
   filterCutoff = new Interface.Knob({
     bounds:[.4,.65], radius:.025,
     value:.2,
@@ -266,7 +312,9 @@
     label:'start/stop',
   })
   
-  panel.add( startButton, sampleRate, bitDepth, decimatorLabel, ringFrequency, ringAmp, ringmodLabel, ringModFreq, ringModDepth, filterCutoff, filterResonance, filterLabel);
+  panel.add( startButton, sampleRate, bitDepth, decimatorLabel, /*ringFrequency, ringAmp, ringmodLabel, ringModFreq, ringModDepth,*/ filterCutoff, filterResonance, filterLabel);
+  
+  //if(_presets[ lastChanged ]) loadPreset( lastChanged );
   </script>
 </body>
 
