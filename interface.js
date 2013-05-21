@@ -1062,6 +1062,30 @@ Interface.Knob = function() {
         this.ctx.fillText(this.label, x + this.radius, y + this.radius * 2.25);
       }
     },
+    setValue : function(value, doNotDraw) {
+      var r = this.max - this.min,
+          v = value;
+      
+      this.lastValue = this.value;
+      
+      this.value = value;
+                
+      if(this.min !== 0 || this.max !== 1) {
+        v -= this.min;
+        this._value = v / r;
+      }else{
+        this._value = this.value;
+      }
+      
+      if(this.value !== this.lastValue) {
+        this.sendTargetMessage();
+        if(this.onvaluechange) this.onvaluechange();
+        this.refresh();
+        this.lastValue = this.value;
+      }
+      
+      if(!doNotDraw) this.refresh();
+    },
     
     changeValue : function( xOffset, yOffset ) {
       if(this.hasFocus || !this.requiresFocus) {
