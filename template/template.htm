@@ -5,13 +5,19 @@
 <html>
 
 <head>
+  
   <script src="js/zepto.js"></script>
   <script src="js/gibberish_2.0.min.js"></script>
   <script src="js/interface.js"></script>
+  
+  <!-- add some meta tags so that apps can be fullscreen under ios -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-touch-fullscreen" content="yes">
+  <meta id="extViewportMeta" name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  
 </head>
 
-<body>
-</body>
+<body></body>
 
 <script>
 
@@ -28,4 +34,5 @@
   panel.add( b )
   
 </script>
+
 </html>
