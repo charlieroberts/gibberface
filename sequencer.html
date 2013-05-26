@@ -12,22 +12,6 @@
   Sequencer = {
     tempo : 100,
     count : 0,
-
-    setButtonNumbers : function() {
-    	for(i = 0; i < grid.rows; i++) {
-    		for(j = 0; j < grid.columns; j++) {
-    			var btn = grid.children[(i * grid.columns) + j];
-    			btn.midiNumber = Sequencer.notes[Sequencer.notes.length - (i+1)];
-    		}
-    	}
-    },
-
-    setSliderNumbers : function(ms, num) {
-    	for(var i = 0; i < ms.children.length; i++) {
-    		var slider = ms.children[i];
-    		slider.midiNumber = num;
-    	}
-    },
     
     run :  function () {
       if(arguments[0] === 0) { this.stop(); return; }
@@ -36,26 +20,20 @@
     
     	for(var i = 0; i < grid.rows; i++) {
         var num = Sequencer.count + (i * grid.columns);
-    		var btn = grid.children[num];
-        if(btn) {
-          switch(i) {
-            case 0: if(btn._value) kick.note(); break;
-            case 1: if(btn._value) snare.note(); break;
-            case 2: if(btn._value) hat.note(); break;
-            case 3: if(btn._value) openHat.note(); break;                              
-          }
+        switch(i) {
+          case 0: if(grid._values[num]) kick.note(); break;
+          case 1: if(grid._values[num]) snare.note(); break;
+          case 2: if(grid._values[num]) hat.note(); break;
+          case 3: if(grid._values[num]) openHat.note(); break;                              
         }
     	}
       
-      if(multi.children[Sequencer.count].value !== multi.children[lastNum].value) {
-        filter.cutoff = multi.children[Sequencer.count].value;
+      if(multi.values[Sequencer.count] !== multi.values[lastNum]) {
+        filter.cutoff = multi.values[Sequencer.count];
       }
       
       beatMarker.setValue( (1/32) * Sequencer.count);
-        
     	if(Sequencer.count++ === 31) Sequencer.count = 0;
-
-    	//Sequencer.timeout = setTimeout(Sequencer.run, Sequencer.tempo);
     },
 
     setTempo : function(newTempo) {
@@ -65,15 +43,15 @@
   }
   drumsequencer = new Gibberish.Sequencer({
     values: [ Sequencer.run ],
-    rate: Math.round(Sequencer.tempo * 44.1),
+    durations: [ Math.round(Sequencer.tempo * 44.1) ],
   });
   
   width = 100, height = 200, whratio = .5, width = 1, height = 1
   panel = new Interface.Panel();
-  panel.setBackgroundColor('#444');
-  panel.background = '#666';
-  panel.fill = "#eee";
-  panel.stroke="#999";
+  panel.background = '#444';
+  panel.childBackground = '#666';
+  panel.childFill = "#eee";
+  panel.childStroke="#999";
   panel.font = '9px helvetica';
   whratio = panel.width / panel.height;
   
@@ -83,24 +61,27 @@
     bounds:[0,.25,.75, .35],
   })
   
+  panel.add( grid )
+  
   lastChanged = 0;
   presets = new Interface.MultiButton({
     rows:2, columns:4,
-    requiresFocus: false,
+    requiresFocus: true,
     bounds:[.775, .1, .2, .1],
     onvaluechange : function(r,c,v) { 
       var changed = r * this.columns + c;
-      this.children[lastChanged].setValue(0);
+      this._values[lastChanged] = 0;
       lastChanged = changed;
     }
   });
   panel.add(presets);
   for(var i = 0; i < presets.rows * presets.columns; i++) { presets.children[i].label = i + 1 }
+  presets._values[0] = 1;
   presets.draw();
-  presets.children[0].setValue(1);  
-  
+    
   presetsLabel = new Interface.Label({
     bounds:[.775, .025, .1, .05],
+    background:'rgba(0,0,0,0)',
     value:'PRESETS',
     hAlign:'left',
   });
@@ -137,7 +118,7 @@
   multi = new Interface.MultiSlider({
     requiresFocus: false,
     count:32,
-    min:0, max:4.5,
+    min:.1, max:.7,
     bounds:[0,.05,.75, .15],
   })
   panel.add(multi);
@@ -154,11 +135,11 @@
     _value:0,
   })
 
-  panel.add( beatMarker, grid  );
-
+  panel.add( beatMarker  );
+  
   Gibberish.init();
   
-  drums = new Gibberish.Bus2();
+  drums = new Gibberish.Bus2()
   
   kick = new Gibberish.Sampler({ file: 'resources/kick.wav' }).connect( drums );
   snare = new Gibberish.Sampler({ file: 'resources/snare.wav' }).connect( drums );
@@ -172,7 +153,7 @@
     mix:.2, max:2,
     isVertical:false,
     label:'kick pitch',
-    value:1
+    value: 1,
   });
   panel.add(kickPitch);
   
@@ -210,8 +191,7 @@
   
   sampleRate = new Interface.Knob({
     isVertical:false,
-    bounds:[.005,.65],
-    radius:.05,
+    bounds:[.005,.65, .1],
     min:.01, max:1,
     value:1,
     target:decimator, key:'sampleRate',
@@ -220,7 +200,7 @@
   
   bitDepth = new Interface.Knob({
     isVertical:false,
-    bounds:[.11,.65], radius:.05,
+    bounds:[.11,.65, .1],
     min:.01, max:16,
     target:decimator, key:'bitDepth',
     value:16,
@@ -229,7 +209,6 @@
   
   decimatorLabel = new Interface.Label({
     bounds:[.005, .625, .1, .1],
-    /*fill:"green",*/
     value:'DECIMATOR',
     hAlign:'left',
   });
@@ -243,14 +222,14 @@
   })
   
   bsChance = new Interface.Knob({
-    bounds:[.25,.65], radius:.05,
+    bounds:[.25,.65, .1],
     value:0,
     target:bufferShuffler, key:'chance',
     label:'stutter %',
   })
   
   bsPitchMin = new Interface.Knob({
-    bounds:[.355,.65], radius:.05,
+    bounds:[.355,.65, .1],
     min:.01, max:4,
     value:1,
     target:bufferShuffler, key:'pitchMin',
@@ -258,7 +237,7 @@
   })
   
   bsPitchMax = new Interface.Knob({
-    bounds:[.46,.65], radius:.05,
+    bounds:[.46,.65, .1],
     min:.1, max:4,
     value:1,
     target:bufferShuffler, key:'pitchMax',
@@ -267,7 +246,6 @@
   
   shufflerLabel = new Interface.Label({
     bounds:[.25, .625, .1, .1],
-    /*fill:"green",*/
     value:'SHUFFLER',
     hAlign:'left',
   });
@@ -275,18 +253,10 @@
   panel.add( bsChance, bsPitchMin, bsPitchMax, shufflerLabel );
   
   filter = new Gibberish.Filter24({input:bufferShuffler, cutoff:.2, resonance:4}).connect();
-  /*filterCutoff = new Interface.Knob({
-    bounds:[.4,.85], radius:.025,
-    value:.2,
-    min:0, max:.7,
-    target:filter, key:'cutoff',
-    label:'cutoff',
-  })*/
-  
+
   filterResonance = new Interface.Knob({
     isVertical:false,
-    bounds:[.6,.65],
-    radius:.05,
+    bounds:[.6,.65, .1],
     min:0, max:6,
     value:4,
     target:filter, key:'resonance',
@@ -302,7 +272,6 @@
   
   filterLabel = new Interface.Label({
     bounds:[.6, .625, .1, .1],
-    /*fill:"green",*/
     value:'FILTER',
     hAlign:'left',
   });
@@ -322,6 +291,7 @@
   panel.add( startButton, sampleRate, bitDepth, decimatorLabel, filterResonance, filterLabel, filterIsLowPass);
   
   //if(_presets[ lastChanged ]) loadPreset( lastChanged );
+  
   </script>
 </body>
 

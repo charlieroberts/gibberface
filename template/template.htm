@@ -1,0 +1,31 @@
+<!-- This is a template file for Gibberface. Make copies of it whenever you want to start a project. Any files made with this template
+     need to be stored in the same directory as the js folder containing interface.js and gibberish.js 
+-->
+
+<html>
+
+<head>
+  <script src="js/zepto.js"></script>
+  <script src="js/gibberish_2.0.min.js"></script>
+  <script src="js/interface.js"></script>
+</head>
+
+<body>
+</body>
+
+<script>
+
+  // some basic setup code creating a full window interface panel and initializing Gibberish */
+  panel = new Interface.Panel()
+  Gibberish.init()
+
+  Gibberish.export("Time", window)
+  Gibberish.export("Binops", window)
+  
+  // put your code below!
+  a = new Gibberish.Sine().connect()
+  b = new Interface.Slider({ bounds:[0,0,1,1], target:a, key:'frequency', min:440, max:880 })
+  panel.add( b )
+  
+</script>
+</html>

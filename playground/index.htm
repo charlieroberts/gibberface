@@ -1,0 +1,550 @@
+<html>
+<head>
+  <script src="../zepto.js"></script>
+  <script src="../interface.js"></script>
+  <script src="../gibberish_2.0.min.js"></script>
+  <script src="codemirror/codemirror.js" type="text/javascript" charset="utf-8"></script>
+  <link rel="stylesheet" href="codemirror/codemirror.css" type="text/css" media="screen" title="no title" charset="utf-8">
+  <script src="codemirror/mode/javascript/javascript.js" type="text/javascript" charset="utf-8"></script>
+  <script>
+  Gibberface = {
+    clear: function() {
+      editor.setValue('');
+    },
+    clearAudioGraph: function() {
+      if(Gibberish.out) Gibberish.clear();
+    },
+    clearInterface : function() {
+      if(panel.clear) panel.clear()
+    },
+    run : function() {
+      window.editor.setValue(arguments[0])
+    },
+  }
+  Gibberish.clear = function() {
+    this.upvalues.length = 1; // make sure to leave master bus!!!
+    this.out.inputs.length = 0;
+    this.analysisUgens.length = 0;
+    this.sequencers.length = 0;
+    Gibberish.dirty(this.out);
+  };
+  Gibberish.init = function() {
+    Gibberish.out = new Gibberish.Bus2();
+    Gibberish.out.codegen();
+    Gibberish.out.getCodeblock();
+    Gibberish.dirty(Gibberish.out);
+    
+    var bufferSize = typeof arguments[0] === 'undefined' ? 1024 : arguments[0];
+    
+    // we will potentially delay start of audio until touch of screen for iOS devices
+    start = function() {
+      
+      if(navigator.userAgent.indexOf('Firefox') === -1 ){
+        document.getElementsByTagName('body')[0].removeEventListener('touchstart', start);
+        Gibberish.context = new webkitAudioContext();
+        Gibberish.node = Gibberish.context.createJavaScriptNode(bufferSize, 2, 2, 44100);	
+        Gibberish.node.onaudioprocess = Gibberish.audioProcess;
+        Gibberish.node.connect(Gibberish.context.destination);
+    
+        if('ontouchstart' in document.documentElement){ // required to start audio under iOS 6
+          var mySource = Gibberish.context.createBufferSource();
+          mySource.connect(Gibberish.context.destination);
+          mySource.noteOn(0);
+        }
+      }else{
+        Gibberish.AudioDataDestination(44100, Gibberish.audioProcessFirefox);
+      }
+    }
+    
+    if('ontouchstart' in document.documentElement) {
+      document.getElementsByTagName('body')[0].addEventListener('touchstart', start);
+    }else{
+      start();
+    }
+    
+    return this;
+  };
+  
+  removeInterface = function() {
+    $("#panel").remove()
+    $(".CodeMirror").css({ width:'100% '})
+  }
+  </script>
+  <style>
+  h1 { 
+    display : inline;
+    font-family: Helvetica-Neue, Helvetica, sans-serif;
+    font-weight:normal;
+  }
+  .CodeMirror {
+    width:50%;
+    height:90%;
+    display:block;
+    top:5%;
+    left:0;
+    float:left;
+    position:absolute;
+  }
+  #panel {
+    float:right;
+    display:block;
+    width: 50% ;
+    height:95%;
+    background-color:black;
+    position:absolute;
+    top:5%;
+    right:0;
+  }
+  .highlightLine {
+    background-color:#f00;
+    color:#0f0;
+  }
+  .Codemirror-gutter {
+    background-color:#eee;
+  }
+  #header { border-bottom:1px solid #666;}
+  button, select, h1 { margin-right:2em;}
+  </style>
+  
+</head>
+<body>
+  <div id="header">
+    <h1>Gibberface Playground</h1>
+    <select onchange="console.log('RUNNING', this.options[this.selectedIndex].text); Gibberface.run(Gibberface.sketches[this.options[this.selectedIndex].text]);">
+    	<option>clear</option>	
+    	<option>sliders and sinewave</option>      
+    	<option>buttons and synth</option>      
+    	<option>buttons, sliders and synth</option>
+    	<option>gyro and PWM</option>
+    	<option>flanger, sampler and gyro</option>
+      <option>fm, sliders and multibutton</option>
+      <option>XY pad, pwm and filter</option>      
+      <option>web audio synth</option>
+      <!--<option>range slider, crossfader, sampler</option>-->
+    </select>
+    <button onmousedown='Gibberface.clearAudioGraph()' ontouchstart='Gibberface.clearAudioGraph()'>clear audio graph</button>
+    <button onmousedown='Gibberface.clearInterface()' ontouchstart='Gibberface.clearInterface()'>clear interface</button>
+    <button onmousedown='removeInterface()' ontouchstart='removeInterface()'>remove interface</button>
+    
+    <button onmousedown='window.open("http://www.charlie-roberts.com/gibberish/docs.html")'>launch gibberish reference</button>
+    <button onmousedown='window.open("http://www.charlie-roberts.com/interface/docs/docs.html")'>launch interface reference</button>    
+    
+  </div>
+  <textarea id="code"></textarea>
+  <div id="panel"></div>
+</body>
+<script>
+  CodeMirror.modeURL = "codemirror/mode/%N/%N.js";
+  
+  var val = "/* everytime this page loads the following four lines are run behind the scenes.\n"+
+    "You would need to manually call them in your own HTML page.\n\n"+
+    "panel = new Interface.Panel({ container:'#panel' })\n"+
+    "Gibberish.init()\n"+
+    "Gibberish.export('Time', window)\n"+
+    "Gibberish.export('Binops', window)\n\n"+
+    "Use the menu above to select examples to experiment with.\n"+
+    "Select code and then press ctrl+enter to execute it.\n"+
+    "*/";
+    
+  Gibberface.sketches = {
+    "sliders and sinewave" : 
+    "sine  = new Gibberish.Sine().connect();\n"+
+    "\n"+
+    "sliderFrequency = new Interface.Slider({\n"+
+    "  target:sine, key:'frequency',\n"+
+    "  label:'freq',\n"+
+    "  min:150, max:1000,\n"+
+    "  bounds:[0,0,.3,1],\n"+
+    "});\n"+
+    "\n"+
+    "sliderAmp = new Interface.Slider({\n"+
+    "  target:sine, key:'amp',\n"+
+    "  label:'amp',\n"+
+    "  bounds:[.3,0,.3,1],\n"+
+    "});\n"+
+    "\n"+
+    "panel.add(sliderFrequency, sliderAmp);\n",
+    
+    "buttons and synth" :
+    "synth  = new Gibberish.Synth().connect();\n"+
+    "    \n"+
+    "button1 = new Interface.Button({\n"+
+    "  mode : 'contact',\n"+
+    "  max:440,\n"+
+    "  label:'440',\n"+
+    "  target:synth, key:'note',\n"+
+    "  bounds:[0,0,.5,.5],\n"+
+    "})\n"+
+    "\n"+
+    "button2 = new Interface.Button({\n"+
+    "  mode : 'contact',\n"+
+    "  max:880,\n"+
+    "  label:'880',\n"+
+    "  target:synth, key:'note',\n"+
+    "  bounds:[.5,0,.5,.5],\n"+
+    "})\n"+
+    "\n"+
+    "button3 = new Interface.Button({\n"+
+    "  mode : 'contact',\n"+
+    "  max:1320,\n"+
+    "  label:'1320',\n"+
+    "  target:synth, key:'note',\n"+
+    "  bounds:[0,.5,.5,.5],\n"+
+    "})\n"+
+    "\n"+
+    "button4 = new Interface.Button({\n"+
+    "  mode : 'contact',\n"+
+    "  max:507,\n"+
+    "  label:'507',\n"+
+    "  target:synth, key:'note',\n"+
+    "  bounds:[.5,.5,.5,.5],\n"+
+    "})\n"+
+    "\n"+
+    "panel.add(button1,button2,button3,button4);",
+    
+    "buttons, sliders and synth" :
+    "synth  = new Gibberish.Synth().connect();\n"+
+    "    \n"+
+    "button1 = new Interface.Button({\n"+
+    "  mode : 'contact',\n"+
+    "  max:440,\n"+
+    "  label:'440',\n"+
+    "  target:synth, key:'note',\n"+
+    "  bounds:[0,0,.5,.25],\n"+
+    "})\n"+
+    "\n"+
+    "button2 = new Interface.Button({\n"+
+    "  mode : 'contact',\n"+
+    "  max:880,\n"+
+    "  label:'880',\n"+
+    "  target:synth, key:'note',\n"+
+    "  bounds:[.5,0,.5,.25],\n"+
+    "})\n"+
+    "\n"+
+    "button3 = new Interface.Button({\n"+
+    "  mode : 'contact',\n"+
+    "  max:1320,\n"+
+    "  label:'1320',\n"+
+    "  target:synth, key:'note',\n"+
+    "  bounds:[0,.25,.5,.25],\n"+
+    "})\n"+
+    "\n"+
+    "button4 = new Interface.Button({\n"+
+    "  mode : 'contact',\n"+
+    "  max:507,\n"+
+    "  label:'507',\n"+
+    "  target:synth, key:'note',\n"+
+    "  bounds:[.5,.25,.5,.25],\n"+
+    "})\n"+
+    "\n"+
+    "sliderAttack = new Interface.Slider({\n"+
+    "  bounds:[0, .5, .5, .25],\n"+
+    "  label: 'attack',\n"+
+    "  isVertical:false,\n"+
+    "  min: 20, max: 44100,\n"+
+    "  target: synth, key:'attack'\n"+
+    "})\n"+
+    "\n"+
+    "sliderDecay = new Interface.Slider({\n"+
+    "  bounds:[.5, .5, .5, .25],\n"+
+    "  label: 'decay',      \n"+
+    "  isVertical:false,\n"+
+    "  min: 20, max: 44100,\n"+
+    "  target: synth, key:'decay'\n"+
+    "})\n"+
+    "\n"+
+    "sliderAmp = new Interface.Slider({\n"+
+    "  bounds:[0, .75, .5, .25],\n"+
+    "  label: 'amp',      \n"+
+    "  isVertical:false,\n"+
+    "  min: 0, max: 1,\n"+
+    "  target: synth, key:'amp'\n"+
+    "})\n"+
+    "\n"+
+    "panel.add(button1,button2,button3,button4, sliderAttack, sliderDecay, sliderAmp);",
+    
+    "gyro and PWM" :
+    "pulse  = new Gibberish.PWM().connect();\n"+
+    "\n"+
+    "o = new Interface.Orientation({\n"+
+    "  onvaluechange : function(pitch, roll, yaw) {\n"+
+    "    pulse.frequency = 200 + pitch * 800;\n"+
+    "    pulse.pulsewidth = roll;\n"+
+    "  }\n"+
+    "}).start()",
+    
+    "flanger, sampler and gyro" : ""+
+    "sampler = new Gibberish.Sampler({\n"+
+    "  file: '../resources/snare.wav',\n"+
+    "  playOnLoad:0,\n"+
+    "})\n"+
+    "\n"+
+    "flanger = new Gibberish.Flanger({ input:sampler }).connect();\n"+
+    "\n"+
+    "o = new Interface.Orientation({\n"+
+    "  onvaluechange : function(pitch, roll, yaw) {\n"+
+    "    sampler.pitch = (-4 + pitch * 8) + 1;\n"+
+    "    flanger.feedback = roll * .95;\n"+
+    "  }\n"+
+    "}).start()\n"+
+    "\n"+
+    "trigger = new Interface.Button({\n"+
+    "  bounds:[0,0,.8,1],\n"+
+    "  mode:'contact',\n"+
+    "  label:'play',\n"+
+    "  ontouchmousedown : function() { sampler.note( o.pitch ); },\n"+
+    "})\n"+
+    "\n"+
+    "flangerSpeedSlider = new Interface.Slider({\n"+
+    "  bounds:[.8,0,.2,1],\n"+
+    "  label:'flanger speed',\n"+
+    "  min:.1, max:8,\n"+
+    "  target:flanger, key:'rate',\n"+
+    "})\n"+
+    "\n"+
+    "panel.add( trigger, flangerSpeedSlider );",
+    
+    "range slider, crossfader, sampler" :
+    "sampler = new Gibberish.Sampler({\n"+
+    "  file: '../resources/trumpet.wav',\n"+
+    "  loops:true,\n"+
+    "  playOnLoad:1,\n"+
+    "});\n"+
+    "\n"+
+    "filter  = new Gibberish.Filter24({ input : sampler })\n"+
+    "delay   = new Gibberish.Delay({ input : filter }).connect();\n"+
+    "      \n"+
+    "panel = new Interface.Panel({ container:document.getElementById('panel') });\n"+
+    "\n"+
+    "samplerRange = new Interface.Range({ \n"+
+    "  bounds : [0,0,1,.2],\n"+
+    "  onvaluechange : function() { \n"+
+    "    sampler.start = this.leftValue * sampler.length;\n"+
+    "    sampler.end = this.rightValue * sampler.length;\n"+
+    "  },\n"+
+    "});\n"+
+    "  \n"+
+    "samplerPitch = new Interface.Crossfader({\n"+
+    "  target:sampler, key:'pitch',\n"+
+    "  bounds : [0,.25,1,.1],\n"+
+    "  isVertical : false,\n"+
+    "  min:-2, max:2,\n"+
+    "});\n"+
+    "\n"+
+    "filterCutoff = new Interface.Slider({\n"+
+    "  target:filter, key:'cutoff',\n"+
+    "  label:'cutoff',\n"+
+    "  bounds : [0,.35,1,.1],\n"+
+    "  isVertical : false,\n"+
+    "  min:0, max:.8,\n"+
+    "});\n"+
+    "  \n"+
+    "filterResonance = new Interface.Slider({\n"+
+    "  target:filter, key:'resonance',\n"+
+    "  label:'resonance',\n"+
+    "  bounds : [0,.45,1,.1],\n"+
+    "  isVertical : false,\n"+
+    "  min:0, max:6,\n"+
+    "});\n"+
+    "  \n"+
+    "feedback = new Interface.Slider({\n"+
+    "  target: delay, key:'feedback',\n"+
+    "  label:'delay feedback',     \n"+
+    "  bounds : [0,.55,1,.1],\n"+
+    "  isVertical : false,\n"+
+    "});\n"+
+    "\n"+
+    "panel.add(samplerRange, samplerPitch, filterCutoff, filterResonance, feedback);",
+    
+    "XY pad, pwm and filter":    
+    "pwms = [];\n"+
+    "numChildren = 8;\n"+
+    "\n"+
+    "bus = new Gibberish.Bus2({amp:.5});    \n"+
+    "\n"+
+    "for(var i =0; i < numChildren; i++) {\n"+
+    "  pwms[i] = new Gibberish.PWM(440).connect(bus);\n"+
+    "}\n"+
+    "\n"+
+    "filter = new Gibberish.Filter24(bus, .2, 3).connect();\n"+
+    "\n"+
+    "d = new Interface.XY({ \n"+
+    "  bounds:[0, 0, 1, .9],\n"+
+    "  'numChildren':numChildren,\n"+
+    "  fill:'rgba(127,80,80,.5)',\n"+
+    "  childWidth:35,\n"+
+    "  detectCollisions: false,\n"+
+    "\n"+
+    "  onvaluechange : function() {\n"+
+    "    for(var i =0; i < this.children.length; i++) {\n"+
+    "      var pwm = pwms[i];\n"+
+    "      pwm.frequency = 220 + this.values[i].y * 880;\n"+
+    "      pwm.pulsewidth = this.values[i].x;\n"+
+    "    }\n"+
+    "  },\n"+
+    "});\n"+
+    "\n"+
+    "e = new Interface.Slider({\n"+
+    "  isVertical: false,\n"+
+    "  label:'amp',\n"+
+    "  bounds:[0, .9, .25, .1],\n"+
+    "  target:bus, key:'amp',\n"+
+    "});\n"+
+    "\n"+
+    "f = new Interface.Slider({\n"+
+    "  isVertical: false,\n"+
+    "  label:'friction + maxvelocity',\n"+
+    "  bounds:[.25, .9, .25, .1],\n"+
+    "  onvaluechange : function(e) {\n"+
+    "    d.friction = .75 + this.value / 4;\n"+
+    "    d.maxVelocity = this.value * 30;\n"+
+    "  },\n"+
+    "});\n"+
+    "  \n"+
+    "g = new Interface.Slider({\n"+
+    "  isVertical: false,\n"+
+    "  label:'filter cutoff',\n"+
+    "  bounds:[.5, .9, .5, .1],  onvaluechange : function(e) {\n"+
+    "    filter.cutoff = this.value * .75;\n"+
+    "  },\n"+
+    "});\n"+
+    "\n"+
+    "panel.add(d,e,f,g);\n"+
+    "\n"+
+    "d.rainbow();",
+    
+    "fm, sliders and multibutton" :
+    "fm = new Gibberish.PolyFM({ maxVoices:5 })\n"+
+    "\n"+
+    "delay = new Gibberish.Delay({ input:fm }).connect()\n"+
+    "\n"+
+    "indexSlider = new Interface.Slider({\n"+
+    "  target:fm,\n"+
+    "  key:'index',\n"+
+    "  min:1,\n"+
+    "  max:50,\n"+
+    "  value:5,\n"+
+    "  label:'index',\n"+
+    "  bounds:[0,0,.5,.5]\n"+
+    "})\n"+
+    "\n"+
+    "panel.add( indexSlider )\n"+
+    "\n"+
+    "cmRatioSlider = new Interface.Slider({\n"+
+    "  target:fm,\n"+
+    "  key:'cmRatio',\n"+
+    "  min:.25,\n"+
+    "  max:20,\n"+
+    "  value:3,\n"+
+    "  label:'cmRatio',\n"+
+    "  bounds:[.5,0,.5,.5]\n"+
+    "})\n"+
+    "\n"+
+    "panel.add( cmRatioSlider )\n"+
+    "\n"+
+    "btns = new Interface.MultiButton({\n"+
+    "  rows:4, columns:4,\n"+
+    "  mode:'contact',\n"+
+    "  onvaluechange: function(row, column, value) {\n"+
+    "  	fm.note( 75 + ((this.columns * row)  + column) * 75 );\n"+
+    "  },\n"+
+    "  bounds:[0,.5,1,.5]\n"+
+    "})\n"+
+    "\n"+
+    "panel.add(btns)\n"+
+    "\n"+
+    "panel.childFill = 'red'",
+    
+    "web audio synth" : 
+    "context = new webkitAudioContext()\n"+
+    "\n"+
+    "osc = context.createOscillator()\n"+
+    "osc.type = 2\n"+
+    "\n"+
+    "gain = context.createGainNode()\n"+
+    "gain.gain.value = 0;\n"+
+    "\n"+
+    "filter = context.createBiquadFilter()\n"+
+    "filter.Q.value = 20\n"+
+    "\n"+
+    "osc.connect( gain )\n"+
+    "gain.connect( filter )\n"+
+    "filter.connect( context.destination )\n"+
+    "\n"+
+    "osc.start(0);\n"+
+    "\n"+
+    "playNote = function(freq, amp, envelopeLength) {\n"+
+    "  osc.frequency.value = freq\n"+
+    "\n"+
+    "  gain.gain.setValueAtTime( 0, context.currentTime )\n"+
+    "  gain.gain.linearRampToValueAtTime( amp, context.currentTime + envelopeLength / 2)\n"+
+    "  gain.gain.linearRampToValueAtTime( 0, context.currentTime + envelopeLength )\n"+
+    "\n"+
+    "  filter.frequency.setValueAtTime(0, context.currentTime)\n"+
+    "  filter.frequency.linearRampToValueAtTime( freq * 4, context.currentTime + envelopeLength / 2)\n"+
+    "  filter.frequency.linearRampToValueAtTime( 0, context.currentTime + envelopeLength )\n"+
+    "  filter.frequency.value = 880\n"+
+    "}\n"+
+    "\n"+
+    "playNote(200, 1, 10)",
+  }
+    
+  window.editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      autofocus: true,
+      indentUnit: 2,
+      matchBrackets: true,
+      tabSize: 2,
+      smartIndent: true,
+      autoLoadMode:'javascript',
+      gutter: true,
+  });
+  CodeMirror.keyMap.playground = {
+    fallthrough: "default",
+
+    "Ctrl-Enter": function(cm) {
+        var v = cm.getSelection();
+        var pos = null;
+        if (v === "") {
+          console.log("BLANK")
+            pos = cm.getCursor();
+            v = cm.getLine( pos.line );
+        }
+        flash( cm, pos );
+        eval( v )
+    },
+  }
+  var flash = function(cm, pos) {
+    if (pos !== null) {
+      v = cm.getLine(pos.line);
+
+      cm.setLineClass(pos.line, null, "highlightLine")
+
+      var cb = (function() {
+        cm.setLineClass(pos.line, null, null);
+      });
+      
+      window.setTimeout(cb, 250);
+
+    } else {
+      var sel = cm.markText(cm.getCursor(true), cm.getCursor(false), "highlightLine");
+
+      var cb = (function() {
+          sel.clear();
+      });
+
+      window.setTimeout(cb, 250);
+    }
+  };
+  window.editor.setOption("keyMap", "playground");
+  
+  window.editor.setValue( val )
+  
+  window.panel = new Interface.Panel({ container:'#panel' });
+  Gibberish.init();
+  
+  Gibberish.export("Time", window)
+  Gibberish.export("Binops", window)
+  
+</script>
+</html>  
