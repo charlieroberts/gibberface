@@ -11,16 +11,24 @@
     clear: function() {
       editor.setValue('');
     },
-    clearAudioGraph: function() {
+    clear_audio: function() {
       if(Gibberish.out) Gibberish.clear();
     },
-    clearInterface : function() {
+    clear_interface : function() {
       if(panel.clear) panel.clear()
     },
     run : function() {
       window.editor.setValue(arguments[0])
     },
+    remove_interface : function() {
+      $("#panel").remove()
+      $(".CodeMirror").css({ width:'100% '})
+    },
+  
+    gibberish_reference : function() { window.open("http://www.charlie-roberts.com/gibberish/docs.html") },
+    interface_reference : function() { window.open("http://www.charlie-roberts.com/interface/docs/docs.html") },
   }
+  
   Gibberish.clear = function() {
     this.upvalues.length = 1; // make sure to leave master bus!!!
     this.out.inputs.length = 0;
@@ -64,11 +72,7 @@
     
     return this;
   };
-  
-  removeInterface = function() {
-    $("#panel").remove()
-    $(".CodeMirror").css({ width:'100% '})
-  }
+   
   </script>
   <style>
   h1 { 
@@ -122,13 +126,22 @@
       <option>web audio synth</option>
       <!--<option>range slider, crossfader, sampler</option>-->
     </select>
+    
+    <select onchange="Gibberface[this.options[this.selectedIndex].text]()">
+      <option>clear_audio</option>
+      <option>clear_interface</option>
+      <option>remove_interface</option>
+      <option>interface_reference</option>
+      <option>gibberish_reference</option>
+    </select>
+    <!--
     <button onmousedown='Gibberface.clearAudioGraph()' ontouchstart='Gibberface.clearAudioGraph()'>clear audio graph</button>
     <button onmousedown='Gibberface.clearInterface()' ontouchstart='Gibberface.clearInterface()'>clear interface</button>
     <button onmousedown='removeInterface()' ontouchstart='removeInterface()'>remove interface</button>
     
     <button onmousedown='window.open("http://www.charlie-roberts.com/gibberish/docs.html")'>launch gibberish reference</button>
     <button onmousedown='window.open("http://www.charlie-roberts.com/interface/docs/docs.html")'>launch interface reference</button>    
-    
+    -->
   </div>
   <textarea id="code"></textarea>
   <div id="panel"></div>
