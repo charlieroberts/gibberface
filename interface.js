@@ -2333,6 +2333,21 @@ Interface.MultiButton = function() {
     children  : [],
     columns:  8,
     
+    setValue: function(row, col, value, shouldRefresh) {
+      if(arguments.length >= 3) {
+        var index = row * col + col;
+        this._values[index] = value === this.max ? 1 : 0;
+        
+        this.values[index] = this._values[index] === 1 ? this.max : this.min
+        
+        if(arguments[3] !== false)
+          this.refresh();
+      }else{
+        this._values[arguments[0]] = arguments[1] === this.max ? 1 : 0;
+        this.values[index] = this._values[index] === 1 ? this.max : this.min
+      }
+    },
+    
     draw : function() { 
       var x = this._x(),
           y = this._y(),

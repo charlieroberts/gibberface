@@ -10,75 +10,75 @@
 <body>
   <script>
     var LIFE = {
-      speed : 500,
+      speed : 500 * 44,
       buttonKiller: function() {
           for (var i = 0; i < life.children.length; i++) {
               life.children[i].setValue(0);
           }
       },
       runLife: function() {
-        if(arguments[0] === 0 && LIFE.timeout) {
-          clearTimeout(LIFE.timeout);
+        if(start.value === 0) {
           return
         }
+
         for (var row = 0; row < life.rows; row++) {
             for (var col = 0; col < life.columns; col++) {
                 var cellNumber = (row * life.columns) + col;
                 var neighborCount = 0;
                 var cell = life.children[cellNumber];
-                if (cell.value == cell.max) {
+                if (life.values[cellNumber] === life.max) {
                     cell.shouldDie = false;
                 } else {
                     cell.shouldLive = false;
                 }
             
-                if (row != 0) {
-                    if (life.children[cellNumber - life.columns].value == cell.max) {
+                if (row !== 0) {
+                    if (life.values[cellNumber - life.columns] === life.max) {
                         neighborCount++;
                     }
-                    if (col != life.columns - 1) {
-                        if (life.children[cellNumber - life.columns + 1].value == cell.max) {
+                    if (col !== life.columns - 1) {
+                        if (life.values[cellNumber - life.columns + 1] === life.max) {
                             neighborCount++;
                         }
                     }
-                    if (col != 0) {
-                        if (life.children[cellNumber - life.columns - 1].value == cell.max) {
+                    if (col !== 0) {
+                        if (life.values[cellNumber - life.columns - 1] === life.max) {
                             neighborCount++;
                         }
                     }
                 }
-                if (col != 0) {
-                    if (life.children[cellNumber - 1].value == cell.max) {
+                if (col !== 0) {
+                    if (life.values[cellNumber - 1] === life.max) {
                         neighborCount++;
                     }
                 }
-                if (col != life.columns - 1) {
-                    if (life.children[cellNumber + 1].value == cell.max) {
+                if (col !== life.columns - 1) {
+                    if (life.values[cellNumber + 1] === life.max) {
                         neighborCount++;
                     }
                 }
             
-                if (row != life.rows - 1) {
-                    if (life.children[cellNumber + life.columns].value == cell.max) {
+                if (row !== life.rows - 1) {
+                    if (life.values[cellNumber + life.columns] === life.max) {
                         neighborCount++;
                     }
-                    if (col != life.columns - 1) {
-                        if (life.children[cellNumber + life.columns + 1].value == cell.max) {
+                    if (col !== life.columns - 1) {
+                        if (life.values[cellNumber + life.columns + 1] === life.max) {
                             neighborCount++;
                         }
                     }
-                    if (col != 0) {
-                        if (life.children[cellNumber + life.columns - 1].value == cell.max) {
+                    if (col !== 0) {
+                        if (life.values[cellNumber + life.columns - 1] === life.max) {
                             neighborCount++;
                         }
                     }
                 }
-                if (cell.value == cell.max) {
-                    if (neighborCount < 2 || neighborCount > 3) {
+                if (life.values[cellNumber] === life.max) {
+                    if (neighborCount < 2 || neighborCount > 2) {
                         cell.shouldDie = true;
                     }
                 } else {
-                    if (neighborCount == 3) {
+                    if (neighborCount === 3) {
                         cell.shouldLive = true;
                     }
                 }
@@ -87,24 +87,28 @@
     
         for (var i = 0; i < life.children.length; i++) {
             var cell = life.children[i];
-            if (cell.value == cell.max) {
+            if (life.values[i] === life.max) {
                 if (cell.shouldDie) {
-                    cell.setValue(cell.min);
+                    life.setValue(i, cell.min);
                     cell.sound.disconnect(bus);
                 }
             } else {
                 if (cell.shouldLive) {
-                    cell.setValue(cell.max);
+                    life.setValue(i, life.max);
                     cell.sound.connect(bus);
                 }
             }
         }
-    
-        LIFE.timeout = setTimeout(LIFE.runLife, LIFE.speed);
+        life.refresh()
       },
     };
     
     Gibberish.init();
+    
+    life = new Gibberish.Sequencer({
+      values: [ LIFE.runLife ],
+      durations: [ LIFE.speed ],
+    }).start();
     
     panel = new Interface.Panel({ useRelativeSizesAndPositions:true });
     
@@ -115,7 +119,6 @@
       stroke:"rgb(255,50,50)",
       requiresFocus:false,
       bounds:[0,0,1,.9],
-      onvaluechange : function() { console.log('errg')},
     });
     start = new Interface.Button({
       bounds: [0, .9, .2, .1],
